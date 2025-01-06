@@ -1,18 +1,23 @@
 package com.example.demo.auth.service;
 
+import com.example.demo.auth.dto.CustomUserDetails;
 import com.example.demo.auth.dto.UserRequest;
-import com.example.demo.auth.entity.UserRoleType;
+import com.example.demo.auth.dto.UserRoleType;
 import com.example.demo.auth.entity.User;
 import com.example.demo.auth.jwt.JWTUtil;
 import com.example.demo.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -57,7 +62,7 @@ public class UserService {
     @Transactional
     public String login(UserRequest.login login) {
         //사용자 확인
-        User user = userRepository.findByLoginId(login.getLoginId()).orElseThrow(()-> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
+        User user = userRepository.findByLoginId(login.getLoginId()).orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
         // 비밀번호 확인
         if (!bCryptPasswordEncoder.matches(login.getPassword(), user.getPassword())) {
@@ -65,7 +70,55 @@ public class UserService {
         }
 
         // JWT 생성 및 반환
-        return jwtUtil.createJwt(user.getLoginId(), user.getUserRoleType().toString(), 60 * 60 * 10L);
+        return jwtUtil.createJwt(user.getLoginId(), user.getUserRoleType().toString(), 60 * 60 * 1000L);
+    }
+
+    //프로필 수정
+    @Transactional
+    public void updateProfile(UserRequest.UpdateProfile updateProfile) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        User user = userRepository.findByLoginId(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        user.setName(updateProfile.getName());
+        user.setNickname(updateProfile.getNickname());
+        user.setProfileImageUrl(updateProfile.getProfileImageUrl());
+        user.setAge(updateProfile.getAge());
+        user.setPosition(updateProfile.getPosition());
+        user.setDescription(updateProfile.getDescription());
+        user.setLeftFoot(updateProfile.getLeftFoot());
+        user.setRightFoot(updateProfile.getRightFoot());
+
+        userRepository.save(user);
+    }
+
+    //비밀번호 변경
+    @Transactional
+    public void changePassword(UserRequest.ChangePassword changePassword) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        User user = userRepository.findByLoginId(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        if (!bCryptPasswordEncoder.matches(changePassword.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
+        }
+
+        user.setPassword(bCryptPasswordEncoder.encode(changePassword.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    //회원 탈퇴
+    @Transactional
+    public void deleteAccount(Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userRepository.findByLoginId(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        userRepository.delete(user);
     }
 
     public List<User> getAllUsers() {

@@ -1,4 +1,4 @@
-package com.example.demo.auth.entity;
+package com.example.demo.auth.dto;
 
 public enum UserRoleType {
     USER, ADMIN

@@ -2,7 +2,7 @@ package com.example.demo.auth.jwt;
 
 import com.example.demo.auth.dto.CustomUserDetails;
 import com.example.demo.auth.entity.User;
-import com.example.demo.auth.entity.UserRoleType;
+import com.example.demo.auth.dto.UserRoleType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

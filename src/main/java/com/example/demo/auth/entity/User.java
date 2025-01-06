@@ -1,8 +1,8 @@
 package com.example.demo.auth.entity;
 
+import com.example.demo.auth.dto.UserRoleType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.antlr.v4.runtime.misc.NotNull;
 
 @Entity
 @Setter
