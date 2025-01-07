@@ -1,8 +1,14 @@
 package com.example.demo.auth.entity;
 
 import com.example.demo.auth.dto.UserRoleType;
+import com.example.demo.team.dto.MembershipStatus;
+import com.example.demo.team.entity.Team;
+import com.example.demo.team.entity.TeamMembership;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Setter
@@ -20,7 +26,6 @@ public class User {
     private String password;
     private String nickname;
     private String name;
-    private String Team;
     private String profileImageUrl;
     private String position;
     private String leftFoot;
@@ -30,5 +35,17 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private UserRoleType userRoleType;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TeamMembership> memberships; // 유저가 가입한 팀의 정보
+
+    // 유저가 가입한 모든 팀 목록을 반환 (승인된 팀만)
+    @Transient
+    public List<Team> getTeams() {
+        return memberships.stream()
+                .filter(m -> m.getStatus() == MembershipStatus.APPROVED)
+                .map(TeamMembership::getTeam)
+                .collect(Collectors.toList());
+    }
 }
 
