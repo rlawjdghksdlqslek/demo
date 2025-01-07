@@ -6,6 +6,7 @@ import com.example.demo.auth.dto.UserRoleType;
 import com.example.demo.auth.entity.User;
 import com.example.demo.auth.jwt.JWTUtil;
 import com.example.demo.auth.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JWTUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Value("${default.profile.image.url}")
     private String defProfileImage;
@@ -71,6 +73,27 @@ public class UserService {
 
         // JWT 생성 및 반환
         return jwtUtil.createJwt(user.getLoginId(), user.getUserRoleType().toString(), 60 * 60 * 1000L);
+    }
+
+    //로그아웃
+    public void logout(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);
+
+            // 토큰 만료 시간 계산
+            long expiryMs = jwtUtil.getExpiryTime(token) - System.currentTimeMillis();
+
+            if (expiryMs > 0) {
+                // 블랙리스트에 추가
+                tokenService.addToBlackList(token, expiryMs);
+            } else {
+                throw new IllegalArgumentException("이미 만료된 토큰입니다.");
+            }
+        } else {
+            throw new IllegalArgumentException("Authorization 헤더가 없습니다.");
+        }
     }
 
     //프로필 수정

@@ -3,6 +3,7 @@ package com.example.demo.auth.jwt;
 import com.example.demo.auth.dto.CustomUserDetails;
 import com.example.demo.auth.entity.User;
 import com.example.demo.auth.dto.UserRoleType;
+import com.example.demo.auth.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -36,13 +38,18 @@ public class JWTFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
         log.info("token : {}", token);
 
+        if (tokenService.isBlackListed(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token is blacklisted");
+            return;
+        }
+
         //토큰 소멸 시간 검증
         if (jwtUtil.isExpired(token)) {
             log.warn("토큰이 만료되었습니다\n");
             filterChain.doFilter(request, response);
             return;
         }
-
         try {
             authenticateUser(token);
         } catch (Exception e) {

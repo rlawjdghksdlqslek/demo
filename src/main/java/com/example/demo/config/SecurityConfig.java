@@ -3,6 +3,7 @@ package com.example.demo.config;
 import com.example.demo.auth.jwt.JWTUtil;
 import com.example.demo.auth.jwt.JWTFilter;
 import com.example.demo.auth.jwt.LoginFilter;
+import com.example.demo.auth.service.TokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,10 +25,12 @@ public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
+    private final TokenService tokenService;
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil) {
+    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil, TokenService tokenService) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtUtil = jwtUtil;
+        this.tokenService = tokenService;
     }
 
     @Bean
@@ -66,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/", "/join", "/api/users/register", "/api/users/login").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class)
+                .addFilterBefore(new JWTFilter(jwtUtil, tokenService), LoginFilter.class)
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 //세션 설정
                 .sessionManagement((session) -> session

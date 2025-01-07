@@ -3,8 +3,11 @@ package com.example.demo.auth.controller;
 import com.example.demo.auth.dto.CustomUserDetails;
 import com.example.demo.auth.dto.UserRequest;
 import com.example.demo.auth.entity.User;
+import com.example.demo.auth.jwt.JWTUtil;
 import com.example.demo.auth.repository.UserRepository;
+import com.example.demo.auth.service.TokenService;
 import com.example.demo.auth.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +22,8 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
+    private final TokenService tokenService;
+    private final JWTUtil jwtUtil;
 
     //회원가입
     @PostMapping("/register")
@@ -32,6 +37,13 @@ public class UserController {
     public ResponseEntity<String> login(@RequestBody UserRequest.login login) {
         String token = userService.login(login);
         return ResponseEntity.ok("Bearer " + token);
+    }
+
+    //로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        userService.logout(request);
+        return ResponseEntity.ok("로그아웃 성공하였습니다.");
     }
 
     //프로필 조회
