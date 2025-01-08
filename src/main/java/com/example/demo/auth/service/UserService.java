@@ -159,12 +159,4 @@ public class UserService {
         User user = userRepository.findByLoginId(loginId).orElseThrow(()-> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         return user;
     }
-
-    //유저가 승인된 모든 팀 목록
-    public List<Team> getUserTeams(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        return user.getTeams();
-    }
 }

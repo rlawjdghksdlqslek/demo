@@ -38,14 +38,5 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamMembership> memberships; // 유저가 가입한 팀의 정보
-
-    // 유저가 가입한 모든 팀 목록을 반환 (승인된 팀만)
-    @Transient
-    public List<Team> getTeams() {
-        return memberships.stream()
-                .filter(m -> m.getStatus() == MembershipStatus.APPROVED)
-                .map(TeamMembership::getTeam)
-                .collect(Collectors.toList());
-    }
 }
 
