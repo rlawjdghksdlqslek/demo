@@ -22,8 +22,6 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
-    private final TokenService tokenService;
-    private final JWTUtil jwtUtil;
 
     //회원가입
     @PostMapping("/register")

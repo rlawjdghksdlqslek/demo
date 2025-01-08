@@ -6,6 +6,7 @@ import com.example.demo.auth.dto.UserRoleType;
 import com.example.demo.auth.entity.User;
 import com.example.demo.auth.jwt.JWTUtil;
 import com.example.demo.auth.repository.UserRepository;
+import com.example.demo.team.entity.Team;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -150,5 +151,12 @@ public class UserService {
 
     public User createUser(User user) {
         return userRepository.save(user);
+    }
+
+    //유저 찾기
+    @Transactional
+    public User findUserByLoginId(String loginId) {
+        User user = userRepository.findByLoginId(loginId).orElseThrow(()-> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return user;
     }
 }
