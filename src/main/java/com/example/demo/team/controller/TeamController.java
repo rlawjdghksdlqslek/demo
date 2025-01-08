@@ -64,6 +64,15 @@ public class TeamController {
         return ResponseEntity.ok("팀이 성공적으로 삭제되었습니다.");
     }
 
+    //역할 부여
+    @PostMapping("/{teamId}/assign-role")
+    public ResponseEntity<String> assignRole(@PathVariable Long teamId,
+                                             @RequestBody TeamRequest.AssignRole assignRoleRequest) {
+        User captain = getAuthenticatedUser();
+        teamService.assignRole(teamId, assignRoleRequest.getUserId(), assignRoleRequest.getRole(), captain);
+        return ResponseEntity.ok("역할이 성공적으로 부여되었습니다.");
+    }
+
     private User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String loginId = authentication.getName();

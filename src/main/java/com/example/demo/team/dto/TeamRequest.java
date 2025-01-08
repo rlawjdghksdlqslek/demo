@@ -21,4 +21,10 @@ public class TeamRequest {
     public static class ApproveJoin {
         private Long userId;
     }
+
+    @Data
+    public static class AssignRole {
+        private Long userId;
+        private MembershipRole role;
+    }
 }
