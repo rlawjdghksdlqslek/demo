@@ -119,4 +119,21 @@ public class TeamService {
         teamRepository.delete(team);
     }
 
+    //역할 부여
+    @Transactional
+    public void assignRole(Long teamId, Long userId, MembershipRole role, User captain) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
+
+        if (!team.getCaptain().equals(captain)) {
+            throw new IllegalArgumentException("역할을 부여할 권한이 없습니다.");
+        }
+
+        TeamMembership membership = membershipRepository.findByTeamIdAndUserId(teamId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("팀 멤버십을 찾을 수 없습니다."));
+
+        membership.setRole(role);
+        membershipRepository.save(membership);
+    }
+
 }
