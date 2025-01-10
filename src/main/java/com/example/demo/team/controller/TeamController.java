@@ -6,6 +6,7 @@ import com.example.demo.auth.service.UserService;
 import com.example.demo.team.dto.TeamRequest;
 import com.example.demo.team.dto.TeamResponse;
 import com.example.demo.team.service.TeamService;
+import com.example.demo.utils.AuthenticatedUserUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,11 +22,12 @@ public class TeamController {
 
     private final TeamService teamService;
     private final UserService userService;
+    private final AuthenticatedUserUtils authenticatedUserUtils;
 
     // 팀 생성
     @PostMapping("/create")
     public ResponseEntity<String> createTeam(@RequestBody TeamRequest.CreateTeam createTeamRequest) {
-        User captain = getAuthenticatedUser();
+        User captain = authenticatedUserUtils.getAuthenticatedUser();
         teamService.createTeam(createTeamRequest.getTeamName(), createTeamRequest.getDescription(), createTeamRequest.getRegion(), captain);
         return ResponseEntity.ok("팀이 성공적으로 생성되었습니다.");
     }
@@ -33,7 +35,7 @@ public class TeamController {
     // 팀 가입 요청
     @PostMapping("/{teamId}/join")
     public ResponseEntity<String> requestJoinTeam(@PathVariable Long teamId) {
-        User user = getAuthenticatedUser();
+        User user = authenticatedUserUtils.getAuthenticatedUser();
         teamService.requestJoinTeam(teamId, user);
         return ResponseEntity.ok("가입 요청이 성공적으로 처리되었습니다.");
     }
@@ -41,7 +43,7 @@ public class TeamController {
     // 가입 요청 승인
     @PostMapping("/{teamId}/approve")
     public ResponseEntity<String> approveJoinRequest(@PathVariable Long teamId, @RequestBody TeamRequest.ApproveJoin approveJoinRequest) {
-        User captain = getAuthenticatedUser();
+        User captain = authenticatedUserUtils.getAuthenticatedUser();
         teamService.approveJoinRequest(teamId, approveJoinRequest.getUserId(), captain);
         return ResponseEntity.ok("가입 요청이 승인되었습니다.");
     }
@@ -49,7 +51,7 @@ public class TeamController {
     // 특정 팀의 멤버 조회
     @GetMapping("/my-teams")
     public ResponseEntity<List<TeamResponse.MyTeam>> getUserTeams() {
-        User user = getAuthenticatedUser();
+        User user = authenticatedUserUtils.getAuthenticatedUser();
         List<TeamResponse.MyTeam> teams = teamService.getUserTeams(user).stream()
                 .map(team -> new TeamResponse.MyTeam(team.getId(), team.getTeamName(), team.getRegion()))
                 .toList();
@@ -59,7 +61,7 @@ public class TeamController {
     // 팀 삭제
     @DeleteMapping("/{teamId}")
     public ResponseEntity<String> deleteTeam(@PathVariable Long teamId) {
-        User captain = getAuthenticatedUser();
+        User captain = authenticatedUserUtils.getAuthenticatedUser();
         teamService.deleteTeam(teamId, captain);
         return ResponseEntity.ok("팀이 성공적으로 삭제되었습니다.");
     }
@@ -68,14 +70,9 @@ public class TeamController {
     @PostMapping("/{teamId}/assign-role")
     public ResponseEntity<String> assignRole(@PathVariable Long teamId,
                                              @RequestBody TeamRequest.AssignRole assignRoleRequest) {
-        User captain = getAuthenticatedUser();
+        User captain = authenticatedUserUtils.getAuthenticatedUser();
         teamService.assignRole(teamId, assignRoleRequest.getUserId(), assignRoleRequest.getRole(), captain);
         return ResponseEntity.ok("역할이 성공적으로 부여되었습니다.");
     }
 
-    private User getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String loginId = authentication.getName();
-        return userService.findUserByLoginId(loginId);
-    }
 }
