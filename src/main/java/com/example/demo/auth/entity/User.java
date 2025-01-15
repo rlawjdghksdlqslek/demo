@@ -1,14 +1,11 @@
 package com.example.demo.auth.entity;
 
 import com.example.demo.auth.dto.UserRoleType;
-import com.example.demo.team.dto.MembershipStatus;
-import com.example.demo.team.entity.Team;
 import com.example.demo.team.entity.TeamMembership;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Entity
 @Setter

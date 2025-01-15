@@ -1,7 +1,7 @@
 package com.example.demo.team.repository;
 
 import com.example.demo.auth.entity.User;
-import com.example.demo.team.dto.MembershipStatus;
+import com.example.demo.team.entity.MembershipStatus;
 import com.example.demo.team.entity.Team;
 import com.example.demo.team.entity.TeamMembership;
 import org.springframework.data.jpa.repository.JpaRepository;

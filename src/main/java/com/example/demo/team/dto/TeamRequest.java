@@ -1,5 +1,6 @@
 package com.example.demo.team.dto;
 
+import com.example.demo.team.entity.MembershipRole;
 import lombok.*;
 
 public class TeamRequest {

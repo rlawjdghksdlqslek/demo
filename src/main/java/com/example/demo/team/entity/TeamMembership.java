@@ -1,8 +1,6 @@
 package com.example.demo.team.entity;
 
 import com.example.demo.auth.entity.User;
-import com.example.demo.team.dto.MembershipRole;
-import com.example.demo.team.dto.MembershipStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
