@@ -1,9 +1,8 @@
 package com.example.demo.team.service;
 
 import com.example.demo.auth.entity.User;
-import com.example.demo.auth.repository.UserRepository;
-import com.example.demo.team.dto.MembershipRole;
-import com.example.demo.team.dto.MembershipStatus;
+import com.example.demo.team.entity.MembershipRole;
+import com.example.demo.team.entity.MembershipStatus;
 import com.example.demo.team.entity.Team;
 import com.example.demo.team.entity.TeamMembership;
 import com.example.demo.team.repository.TeamMembershipRepository;

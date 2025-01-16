@@ -1,10 +1,11 @@
 package com.example.demo.team.repository;
 
 import com.example.demo.auth.entity.User;
-import com.example.demo.team.dto.MembershipStatus;
+import com.example.demo.team.entity.MembershipStatus;
 import com.example.demo.team.entity.Team;
 import com.example.demo.team.entity.TeamMembership;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +25,8 @@ public interface TeamMembershipRepository extends JpaRepository<TeamMembership, 
 
     // 특정 팀의 승인된 멤버 목록 조회
     List<TeamMembership> findByTeamAndStatus(Team team, MembershipStatus status);
+
+    // 유저가 속한 팀을 조회.
+    @Query("SELECT m.team FROM TeamMembership m WHERE m.user = :user AND m.status = 'APPROVED'")
+    Optional<Team> findApprovedTeamByUser(User user);
 }
