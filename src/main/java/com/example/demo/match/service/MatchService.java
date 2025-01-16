@@ -1,12 +1,16 @@
 package com.example.demo.match.service;
 
 import com.example.demo.auth.entity.User;
+import com.example.demo.match.dto.MatchResponseDto;
+import com.example.demo.match.entity.MatchApplication;
 import com.example.demo.match.entity.MatchRequest;
 import com.example.demo.match.entity.MatchResult;
 import com.example.demo.match.entity.MatchStatus;
+import com.example.demo.match.repository.MatchApplicationRepository;
 import com.example.demo.match.repository.MatchRequestRepository;
 import com.example.demo.match.repository.MatchResultRepository;
 import com.example.demo.team.entity.Team;
+import com.example.demo.team.repository.TeamMembershipRepository;
 import com.example.demo.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,48 +25,105 @@ public class MatchService {
 
     private final MatchRequestRepository matchRequestRepository;
     private final MatchResultRepository matchResultRepository;
+    private final MatchApplicationRepository matchApplicationRepository;
     private final TeamRepository teamRepository;
+    private final TeamMembershipRepository teamMembershipRepository;
 
-    //경기 요청
+    // 경기 요청 생성
     @Transactional
-    public MatchRequest matchRequest(Long requestingTeamId, Long targetTeamId, Date matchDate, Date startTime, Date endTime, String Location, String matchFormat) {
-        Team requestingTeam = teamRepository.findById(requestingTeamId).orElseThrow(() -> new IllegalArgumentException("요청 팀을 찾을 수 없습니다."));
-        Team targetTeam = teamRepository.findById(targetTeamId).orElseThrow(() -> new IllegalArgumentException("상대 팀을 찾을 수 없습니다."));
-
-        //권한 확인 추가
+    public MatchResponseDto createMatchRequest(User user, Date matchDate, Date startTime, Date endTime, String location, String matchFormat) {
+        Team requestingTeam = teamMembershipRepository.findApprovedTeamByUser(user)
+                .orElseThrow(() -> new IllegalArgumentException("사용자가 속한 팀이 없습니다."));
 
         MatchRequest matchRequest = MatchRequest.builder()
                 .requestingTeam(requestingTeam)
-                .targetTeam(targetTeam)
                 .matchDate(matchDate)
                 .startTime(startTime)
                 .endTime(endTime)
-                .location(Location)
+                .location(location)
                 .matchFormat(matchFormat)
-                .matchStatus(MatchStatus.PENDING)
+                .matchStatus(MatchStatus.OPEN)
                 .createdAt(new Date())
                 .updatedAt(new Date())
                 .build();
 
-        return matchRequestRepository.save(matchRequest);
+        MatchRequest savedMatchRequest = matchRequestRepository.save(matchRequest);
+
+        return MatchResponseDto.builder()
+                .id(savedMatchRequest.getId())
+                .matchDate(matchRequest.getMatchDate().toString())
+                .startTime(matchRequest.getStartTime().toString())
+                .endTime(matchRequest.getEndTime().toString())
+                .location(matchRequest.getLocation())
+                .matchFormat(matchRequest.getMatchFormat())
+                .teamName(matchRequest.getRequestingTeam().getTeamName())
+                .region(matchRequest.getRequestingTeam().getRegion())
+                .build();
     }
 
-    //경기 요청 상태 업데이트 (수락/거절)
+    // 생성된 경기 리스트 조회
+    @Transactional(readOnly = true)
+    public List<MatchRequest> getMatchRequests(String location, String matchFormat, Date matchDate) {
+        return matchRequestRepository.findByMatchStatusAndLocationAndMatchFormatAndMatchDate(
+                MatchStatus.OPEN, location, matchFormat, matchDate
+        );
+    }
+
+    // 경기 요청에 신청
     @Transactional
-    public void respondToMatchRequest(Long matchRequestId, MatchStatus matchStatus, String rejectReason) {
+    public MatchApplication applyToMatchRequest(Long matchRequestId, Long applicantTeamId, String comment) {
         MatchRequest matchRequest = matchRequestRepository.findById(matchRequestId)
-                .orElseThrow(() -> new IllegalArgumentException("매칭 요청을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("경기 요청을 찾을 수 없습니다."));
 
-        if (matchStatus == MatchStatus.REJECTED && (rejectReason == null || rejectReason.isEmpty())) {
-            throw new IllegalArgumentException("거절 사유를 입력해야 합니다.");
+        Team applicantTeam = teamRepository.findById(applicantTeamId)
+                .orElseThrow(() -> new IllegalArgumentException("신청 팀을 찾을 수 없습니다."));
+
+        if (matchApplicationRepository.findByMatchRequestAndApplicantTeam(matchRequest, applicantTeam).isPresent()) {
+            throw new IllegalArgumentException("이미 신청한 팀입니다.");
         }
 
-        matchRequest.setMatchStatus(matchStatus);
-        if (matchStatus == MatchStatus.REJECTED) {
-            matchRequest.setRejectReason(rejectReason);
+        MatchApplication application = MatchApplication.builder()
+                .matchRequest(matchRequest)
+                .applicantTeam(applicantTeam)
+                .comment(comment)
+                .build();
+
+        return matchApplicationRepository.save(application);
+    }
+
+    // 경기 신청 리스트 조회
+    @Transactional(readOnly = true)
+    public List<MatchApplication> getApplicationsForMatchRequest(Long matchRequestId) {
+        MatchRequest matchRequest = matchRequestRepository.findById(matchRequestId)
+                .orElseThrow(() -> new IllegalArgumentException("경기 요청을 찾을 수 없습니다."));
+
+        return matchApplicationRepository.findByMatchRequest(matchRequest);
+    }
+
+    // 매칭 확정
+    @Transactional
+    public MatchRequest confirmMatch(Long matchRequestId, Long applicationId) { // applicationId는 특정 경기 요청에 대해 신청한 팀
+        MatchRequest matchRequest = matchRequestRepository.findById(matchRequestId)
+                .orElseThrow(() -> new IllegalArgumentException("경기 요청을 찾을 수 없습니다."));
+
+        if (!matchRequest.getMatchStatus().equals(MatchStatus.OPEN)) {
+            throw new IllegalArgumentException("이미 마감된 경기 요청입니다.");
         }
+
+        MatchApplication application = matchApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("매칭 신청을 찾을 수 없습니다."));
+
+        if (!application.getMatchRequest().equals(matchRequest)) {
+            throw new IllegalArgumentException("신청이 경기 요청과 일치하지 않습니다.");
+        }
+
+        application.setIsConfirmed(true);
+        matchRequest.setConfirmedApplication(application);
+        matchRequest.setMatchStatus(MatchStatus.CLOSED);
         matchRequest.setUpdatedAt(new Date());
-        matchRequestRepository.save(matchRequest);
+
+        matchApplicationRepository.save(application);
+        return matchRequestRepository.save(matchRequest);
     }
 
     //경기 결과 저장
@@ -71,8 +132,8 @@ public class MatchService {
         MatchRequest matchRequest = matchRequestRepository.findById(matchRequestId)
                 .orElseThrow(() -> new IllegalArgumentException("매칭 요청을 찾을 수 없습니다."));
 
-        if (matchRequest.getMatchStatus() != MatchStatus.ACCEPTED) {
-            throw new IllegalArgumentException("수락된 매칭만 결과를 저장할 수 있습니다.");
+        if (matchRequest.getMatchStatus() != MatchStatus.CLOSED) {
+            throw new IllegalArgumentException("마감된 매칭만 결과를 저장할 수 있습니다.");
         }
 
         MatchResult matchResult = MatchResult.builder()
@@ -120,5 +181,11 @@ public class MatchService {
         } else {
             return matchRequestRepository.findByRequestingTeam(team);
         }
+    }
+
+    // 전체 경기 조회
+    @Transactional(readOnly = true)
+    public List<MatchRequest> getAllMatchRequests() {
+        return matchRequestRepository.findAll();
     }
 }

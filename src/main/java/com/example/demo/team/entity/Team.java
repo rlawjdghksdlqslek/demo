@@ -1,6 +1,7 @@
 package com.example.demo.team.entity;
 
 import com.example.demo.auth.entity.User;
+import com.example.demo.match.entity.MatchRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,9 @@ public class Team {
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamMembership> memberships; // 팀 멤버십 관계
+
+    @OneToMany(mappedBy = "requestingTeam", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MatchRequest> matchRequests; // 팀의 경기 요청
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;

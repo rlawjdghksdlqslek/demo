@@ -5,6 +5,7 @@ import com.example.demo.match.entity.MatchStatus;
 import com.example.demo.team.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Date;
 import java.util.List;
 
 public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long> {
@@ -17,4 +18,10 @@ public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long
     List<MatchRequest> findByRequestingTeamAndMatchStatus(Team team, MatchStatus matchStatus);
 
     List<MatchRequest> findByRequestingTeamOrTargetTeam(Team requestingTeam, Team targetTeam);
+
+    List<MatchRequest> findByMatchStatusAndLocationAndMatchFormatAndMatchDate(
+            MatchStatus status, String location, String matchFormat, Date matchDate
+    );
+
+    List<MatchRequest> findByRequestingTeamId(Long teamId);
 }
